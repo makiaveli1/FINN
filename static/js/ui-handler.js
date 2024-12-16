@@ -77,14 +77,9 @@ function initializeMediaHandlers() {
     };
 
     window.playVideo = function(base64Video) {
-        const video = document.createElement("video");
+        const video = document.getElementById('video-preview');
         video.src = `data:video/mp4;base64,${base64Video}`;
         video.controls = true;
-        const chatLog = document.getElementById("chat-log");
-        const messageDiv = document.createElement("div");
-        messageDiv.className = "message gemini-message";
-        messageDiv.appendChild(video);
-        chatLog.appendChild(messageDiv);
-        chatLog.scrollTop = chatLog.scrollHeight;
+        video.play();
     };
 }
