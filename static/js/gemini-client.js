@@ -116,7 +116,6 @@ class GeminiClient {
                                 response_modalities: ["TEXT", "AUDIO"],
                                 candidate_count: 1,
                                 max_output_tokens: 1024,
-                                safety_settings: [],
                                 ...this.defaultConfig?.generation_config
                             }
                         }
@@ -192,13 +191,6 @@ class GeminiClient {
                     max_output_tokens: 2048,
                     top_p: 0.8,
                     top_k: 40,
-                    safety_settings: [
-                        {
-                            category: "HARM_CATEGORY_HARASSMENT",
-                            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-                        },
-                        // ... other safety settings ...
-                    ]
                 }
             }
         };
@@ -364,24 +356,6 @@ class GeminiClient {
                     max_output_tokens: 2048,
                     top_p: 0.8,
                     top_k: 40,
-                    safety_settings: [
-                        {
-                            category: "HARM_CATEGORY_HARASSMENT",
-                            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-                        },
-                        {
-                            category: "HARM_CATEGORY_HATE_SPEECH",
-                            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-                        },
-                        {
-                            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-                        },
-                        {
-                            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-                            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-                        }
-                    ]
                 },
                 tools: [
                     {
