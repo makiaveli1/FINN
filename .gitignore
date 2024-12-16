@@ -44,3 +44,4 @@ environment.yml
 
 # windsurf rules
 .windsurfrules
+.aider*

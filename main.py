@@ -28,8 +28,10 @@ logger = logging.getLogger(__name__)
 # Constants
 HOST = "us-central1-aiplatform.googleapis.com"
 API_VERSION = "v1alpha"
-MODEL_NAME = "projects/impactful-arbor-399011/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp"
-SERVICE_URL = f"wss://{HOST}/ws/google.cloud.aiplatform.v1beta1.LlmBidiService/BidiGenerateContent"
+MODEL_NAME = ("projects/impactful-arbor-399011/locations/us-central1/"
+              "publishers/google/models/gemini-2.0-flash-exp")
+SERVICE_URL = (f"wss://{HOST}/ws/google.cloud.aiplatform.v1beta1."
+               "LlmBidiService/BidiGenerateContent")
 DEBUG = True
 
 
@@ -45,7 +47,7 @@ DEFAULT_CONFIG = {
         "temperature": 0.7,
         "candidate_count": 1,
         "max_output_tokens": 1024,
-        "response_modalities": ["TEXT", "AUDIO"]  # Added AUDIO modality
+        "response_modalities": ["TEXT", "AUDIO"]
     },
     "tools": [
         {
@@ -70,7 +72,8 @@ DEFAULT_CONFIG = {
 }
 
 # Media handling configurations
-SUPPORTED_IMAGE_FORMATS = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+SUPPORTED_IMAGE_FORMATS = {"image/jpeg", "image/png",
+                           "image/gif", "image/webp"}
 SUPPORTED_AUDIO_FORMATS = {"audio/wav", "audio/webm", "audio/ogg"}
 SUPPORTED_VIDEO_FORMATS = {"video/webm", "video/mp4"}
 MAX_IMAGE_SIZE = 4 * 1024 * 1024  # 4MB
@@ -129,7 +132,8 @@ class StaticFileHandler:
             file_path = self.static_dir / path
             try:
                 file_path = file_path.resolve()
-                if not str(file_path).startswith(str(self.static_dir.resolve())):
+                if not str(file_path).startswith(
+                        str(self.static_dir.resolve())):
                     logger.warning(f"Attempted path traversal: {path}")
                     return (HTTPStatus.FORBIDDEN, [], b"403 Forbidden")
             except Exception:
@@ -160,14 +164,16 @@ class StaticFileHandler:
 
         except Exception as e:
             logger.error(f"Error serving static file: {e}")
-            return (HTTPStatus.INTERNAL_SERVER_ERROR, [], b"500 Internal Server Error")
+            return (HTTPStatus.INTERNAL_SERVER_ERROR, [],
+                    b"500 Internal Server Error")
 
 
 class MediaProcessor:
     """Handles media processing for different modalities."""
 
     @staticmethod
-    async def process_image(data: Union[str, bytes], mime_type: str) -> Dict[str, Any]:
+    async def process_image(data: Union[str, bytes],
+                            mime_type: str) -> Dict[str, Any]:
         """Process and validate image data."""
         try:
             if isinstance(data, str):
@@ -189,17 +195,19 @@ class MediaProcessor:
                     img = img.resize(new_size, Image.Resampling.LANCZOS)
 
                 img_byte_arr = io.BytesIO()
-                img.save(img_byte_arr, format=mime_type.split("/")[-1].upper())
-                processed_data = base64.b64encode(img_byte_arr.getvalue()).decode(
-                    "utf-8"
-                )
+                img.save(img_byte_arr,
+                         format=mime_type.split("/")[-1].upper())
+                processed_data = base64.b64encode(
+                    img_byte_arr.getvalue()).decode("utf-8")
 
-            return {"inline_data": {"mime_type": mime_type, "data": processed_data}}
+            return {"inline_data": {"mime_type": mime_type,
+                                    "data": processed_data}}
         except Exception as e:
             raise GeminiMediaError(f"Image processing error: {str(e)}")
 
     @staticmethod
-    async def process_audio(data: Union[str, bytes], mime_type: str) -> Dict[str, Any]:
+    async def process_audio(data: Union[str, bytes],
+                            mime_type: str) -> Dict[str, Any]:
         """Process and validate audio data."""
         try:
             if isinstance(data, str):
@@ -220,7 +228,8 @@ class MediaProcessor:
             raise GeminiMediaError(f"Audio processing error: {str(e)}")
 
     @staticmethod
-    async def process_video(data: Union[str, bytes], mime_type: str) -> Dict[str, Any]:
+    async def process_video(data: Union[str, bytes],
+                            mime_type: str) -> Dict[str, Any]:
         """Process and validate video data."""
         try:
             if isinstance(data, str):
@@ -298,9 +307,11 @@ class GeminiProxy:
                 else:
                     return False
             else:
-                if "serverContent" not in message and "toolCall" not in message and "toolCallCancellation" not in message:
+                if ("serverContent" not in message and "toolCall" not in message
+                        and "toolCallCancellation" not in message):
                     return False
-                if "serverContent" in message and "modelTurn" not in message["serverContent"]:
+                if ("serverContent" in message and
+                        "modelTurn" not in message["serverContent"]):
                     return False
             return True
         except Exception as e:
@@ -330,7 +341,9 @@ class GeminiProxy:
                 # Send initial setup message
                 setup_message = {
                     "model": MODEL_NAME,
-                    "generation_config": config.get("generation_config", DEFAULT_CONFIG["generation_config"]),
+                    "generation_config": config.get(
+                        "generation_config",
+                        DEFAULT_CONFIG["generation_config"]),
                     "tools": config.get("tools", DEFAULT_CONFIG["tools"]),
                 }
                 
@@ -341,18 +354,21 @@ class GeminiProxy:
                 await connection.send(json.dumps(setup_message_wrapper))
 
                 # Wait for setup acknowledgment
-                response = await asyncio.wait_for(connection.recv(), timeout=10.0)
+                response = await asyncio.wait_for(connection.recv(),
+                                                  timeout=10.0)
                 response_data = json.loads(response)
                 
                 if not response_data.get("success"):
-                    raise GeminiConnectionError(f"Setup failed: {response_data.get('error')}")
+                    raise GeminiConnectionError(
+                        f"Setup failed: {response_data.get('error')}")
 
                 return connection
 
         except asyncio.TimeoutError as e:
             raise GeminiConnectionError("Connection timeout") from e
         except Exception as e:
-            raise GeminiConnectionError(f"Failed to connect to Gemini server: {e}") from e
+            raise GeminiConnectionError(
+                f"Failed to connect to Gemini server: {e}") from e
 
     async def send_with_retry(
         self,
@@ -397,7 +413,8 @@ class GeminiProxy:
                 try:
                     data = json.loads(message)
                     if DEBUG:
-                        direction = "client → server" if is_client_to_server else "server → client"
+                        direction = ("client → server" if is_client_to_server
+                                     else "server → client")
                         logger.debug(f"{direction}: {data}")
 
                     # Handle ping/pong
@@ -406,10 +423,12 @@ class GeminiProxy:
                         continue
 
                     # Validate message format
-                    if not self.validate_message_format(data, is_client_to_server):
+                    if not self.validate_message_format(
+                            data, is_client_to_server):
                         logger.error(f"Invalid message format: {data}")
                         if is_client_to_server:
-                            await self.send_error(source, "Invalid message format")
+                            await self.send_error(source,
+                                                  "Invalid message format")
                         continue
                     
                     if is_client_to_server:
@@ -421,7 +440,8 @@ class GeminiProxy:
                             await destination.send(json.dumps(data))
                         else:
                             logger.error(f"Unknown client message type: {data}")
-                            await self.send_error(source, "Unknown client message type")
+                            await self.send_error(source,
+                                                  "Unknown client message type")
                     else:
                         if "serverContent" in data:
                             await destination.send(json.dumps(data))
@@ -431,7 +451,8 @@ class GeminiProxy:
                             await destination.send(json.dumps(data))
                         else:
                             logger.error(f"Unknown server message type: {data}")
-                            await self.send_error(source, "Unknown server message type")
+                            await self.send_error(source,
+                                                  "Unknown server message type")
 
                     # Update metrics
                     self.metrics["total_messages_processed"] += 1
@@ -443,7 +464,8 @@ class GeminiProxy:
                 except Exception as e:
                     logger.error(f"Error processing message: {e}")
                     if is_client_to_server:
-                        await self.send_error(source, "Failed to process message")
+                        await self.send_error(source,
+                                              "Failed to process message")
 
         except websockets.exceptions.ConnectionClosedError as e:
             logger.info(f"Connection closed normally: {e}")
@@ -464,7 +486,8 @@ class GeminiProxy:
             logger.info(f"New client connection: {client_id}")
             
             # Handle authentication with longer timeout
-            auth_message = await asyncio.wait_for(websocket.recv(), timeout=15.0)
+            auth_message = await asyncio.wait_for(websocket.recv(),
+                                                  timeout=15.0)
             auth_data = json.loads(auth_message)
             logger.debug(f"Received auth message: {auth_data}")
 
@@ -616,7 +639,8 @@ class WebServer:
             file_path = self.static_dir / filename
             
             # Security check for path traversal
-            if not str(file_path.resolve()).startswith(str(self.static_dir.resolve())):
+            if not str(file_path.resolve()).startswith(
+                    str(self.static_dir.resolve())):
                 raise web.HTTPForbidden()
 
             if not file_path.exists():

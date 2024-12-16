@@ -42,7 +42,7 @@ async function startAudioInput() {
                     const base64 = btoa(String.fromCharCode.apply(null, new Uint8Array(buffer)));
                     geminiClient.sendMediaMessage([{
                         mime_type: "audio/pcm",
-                         base64,
+                        data: base64,
                         sample_rate: 16000,
                         channels: 1,
                     }]);
@@ -84,7 +84,7 @@ function stopAudioInput() {
 function sendVoiceMessage(b64PCM) {
     geminiClient.sendMediaMessage([{
         mime_type: "audio/pcm",
-         b64PCM,
+        data: b64PCM,
         sample_rate: 16000,
         channels: 1,
     }]);

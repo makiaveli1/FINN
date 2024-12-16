@@ -98,6 +98,15 @@
     <script src="/static/js/audio-processor.js"></script>
     <script src="/static/js/gemini-client.js"></script>
     <script src="/static/js/ui-handler.js"></script>
+    <script>
+        // Add event listener to update the temperature value in real-time
+        const temperatureSlider = document.getElementById('temperature');
+        const temperatureValue = document.querySelector('.temperature-value');
+
+        temperatureSlider.addEventListener('input', () => {
+            temperatureValue.textContent = temperatureSlider.value;
+        });
+    </script>
 </body>
 
 </html>
