@@ -40,7 +40,12 @@ async function startAudioInput() {
                         view.setInt16(i * 2, e.data[i] * 0x7fff, true);
                     }
                     const base64 = btoa(String.fromCharCode.apply(null, new Uint8Array(buffer)));
-                    sendVoiceMessage(base64);
+                    geminiClient.sendMediaMessage([{
+                        mime_type: "audio/pcm",
+                         base64,
+                        sample_rate: 16000,
+                        channels: 1,
+                    }]);
                 }
             };
         } else {

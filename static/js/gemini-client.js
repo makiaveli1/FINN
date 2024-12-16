@@ -432,7 +432,7 @@ class GeminiClient {
     }
 
     handleError(context, error) {
-        const errorMessage = `${context}: ${error.message}`;
+        const errorMessage = `[${context}] ${error.message}`;
         this.handlers.onError(errorMessage);
         console.error(errorMessage, error);
     }
