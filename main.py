@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 # Constants
 HOST = "us-central1-aiplatform.googleapis.com"
 API_VERSION = "v1alpha"
-MODEL_NAME = "models/gemini-2.0-flash-exp"
+MODEL_NAME = "projects/impactful-arbor-399011/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp"
 SERVICE_URL = f"wss://{HOST}/ws/google.cloud.aiplatform.v1beta1.LlmBidiService/BidiGenerateContent"
 DEBUG = True
 
@@ -45,7 +45,6 @@ DEFAULT_CONFIG = {
         "temperature": 0.7,
         "candidate_count": 1,
         "max_output_tokens": 1024,
-        "safety_settings": [],
         "response_modalities": ["TEXT", "AUDIO"]  # Added AUDIO modality
     },
     "tools": [
