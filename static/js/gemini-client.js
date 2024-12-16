@@ -355,45 +355,6 @@ class GeminiClient {
         };
     }
 
-    sendInitialSetup(apiKey, modelId, temperature) {
-        const setupMessage = {
-            bearer_token: apiKey,
-            setup: {
-                model: modelId,
-                generation_config: {
-                    response_modalities: ["TEXT", "AUDIO", "VIDEO"],
-                    temperature: temperature,
-                    candidate_count: 1,
-                    max_output_tokens: 2048,
-                    top_p: 0.8,
-                    top_k: 40,
-                },
-                tools: [
-                    {
-                        function_declarations: [
-                            {
-                                name: "search",
-                                description: "Search for information",
-                                parameters: {
-                                    type: "object",
-                                    properties: {
-                                        query: {
-                                            type: "string",
-                                            description: "Search query"
-                                        }
-                                    },
-                                    required: ["query"]
-                                }
-                            }
-                        ]
-                    }
-                ]
-            }
-        };
-
-        this.sendMessage(setupMessage);
-    }
-
     sendUserMessage(text, mediaChunks = []) {
         const message = {
             client_content: {
