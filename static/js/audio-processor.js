@@ -82,20 +82,12 @@ function stopAudioInput() {
 }
 
 function sendVoiceMessage(b64PCM) {
-    const payload = {
-        realtime_input: {
-            media_chunks: [
-                {
-                    mime_type: "audio/pcm",
-                    data: b64PCM,
-                    sample_rate: 16000,
-                    channels: 1,
-                }
-            ]
-        }
-    };
-
-    webSocket.send(JSON.stringify(payload));
+    geminiClient.sendMediaMessage([{
+        mime_type: "audio/pcm",
+         b64PCM,
+        sample_rate: 16000,
+        channels: 1,
+    }]);
     console.log("Voice message sent.");
 }
 
