@@ -45,6 +45,20 @@ function initializeEventListeners() {
             }
         });
     }
+
+    // Camera button handler
+    const cameraBtn = document.getElementById('camera-btn');
+    if (cameraBtn) {
+        cameraBtn.addEventListener('click', async () => {
+            if (!geminiClient.isCameraActive) {
+                await geminiClient.startCamera();
+                cameraBtn.classList.add('active');
+            } else {
+                geminiClient.stopCamera();
+                cameraBtn.classList.remove('active');
+            }
+        });
+    }
 }
 
 function initializeMediaHandlers() {

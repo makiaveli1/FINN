@@ -29,6 +29,10 @@ class GeminiClient {
         this.authInProgress = false;
         this.setupInProgress = false;
         this.defaultConfig = null;
+        this.videoStream = null;
+        this.videoCanvas = document.getElementById('video-canvas');
+        this.videoContext = this.videoCanvas.getContext('2d');
+        this.isCameraActive = false;
         
         // Initialize UI elements
         this.initializeUI();
@@ -163,6 +167,7 @@ class GeminiClient {
     }
 
     async sendAuthMessage(apiKey) {
+        this.authInProgress = true;
         const authMessage = {
             bearer_token: apiKey
         };
@@ -181,6 +186,7 @@ class GeminiClient {
     }
 
     async sendSetupMessage(modelId, temperature) {
+        this.setupInProgress = true;
         const setupMessage = {
             setup: {
                 model: modelId,
@@ -225,6 +231,11 @@ class GeminiClient {
             // Handle normal messages
             if (data.type === "pong") {
                 this.log('Received pong');
+                return;
+            }
+            
+            if (data.type === "connection_success") {
+                this.log('Received connection success');
                 return;
             }
 
@@ -402,6 +413,36 @@ class GeminiClient {
         this.sendMessage(message);
     }
 
+    captureVideoFrame() {
+        if (!this.isCameraActive || !this.videoStream) {
+            return null;
+        }
+
+        this.videoCanvas.width = this.videoStream.getVideoTracks()[0].getSettings().width;
+        this.videoCanvas.height = this.videoStream.getVideoTracks()[0].getSettings().height;
+        this.videoContext.drawImage(document.getElementById('video-preview'), 0, 0, this.videoCanvas.width, this.videoCanvas.height);
+        return this.videoCanvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+    }
+
+    async startCamera() {
+        try {
+            this.videoStream = await navigator.mediaDevices.getUserMedia({ video: { width: { max: 640 }, height: { max: 480 } } });
+            document.getElementById('video-preview').srcObject = this.videoStream;
+            this.isCameraActive = true;
+        } catch (error) {
+            this.handleError("Error accessing camera", error);
+        }
+    }
+
+    stopCamera() {
+        if (this.videoStream) {
+            this.videoStream.getTracks().forEach(track => track.stop());
+            document.getElementById('video-preview').srcObject = null;
+            this.videoStream = null;
+            this.isCameraActive = false;
+        }
+    }
+
     handleServerMessage(data) {
         if (data.error) {
             this.handleError("Server error", new Error(data.error.message));
@@ -414,6 +455,15 @@ class GeminiClient {
                 this.handlers.onMessage(modelTurn.parts);
             }
         }
+    }
+    
+    sendMediaMessage(mediaChunks) {
+        const message = {
+            realtime_input: {
+                media_chunks: mediaChunks
+            }
+        };
+        this.sendMessage(message);
     }
 
     updateStatus(status) {
