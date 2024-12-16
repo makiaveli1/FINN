@@ -315,7 +315,6 @@ class GeminiProxy:
             headers = {
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {bearer_token}",
-                "X-Goog-Api-Key": bearer_token,  # Add this for Vertex AI
             }
 
             async with asyncio.timeout(15):  # Increase timeout
@@ -516,7 +515,7 @@ class GeminiProxy:
         except Exception as e:
             error_message = str(e)
             logger.error(f"Error handling client: {error_message}")
-            await self.send_error(websocket, error_message)
+            await self.send_error(websocket, f"Error: {e}", 1011)
         finally:
             logger.info(f"Cleaning up connection: {client_id}")
             if server_websocket:
@@ -529,7 +528,7 @@ class GeminiProxy:
         self, websocket: WebSocketCommonProtocol, message: str, code: int = 1008
     ) -> None:
         """Sends an error message to the client and closes the connection."""
-        error_response = {"error": {"code": "INVALID_ARGUMENT", "message": message}}
+        error_response = {"error": {"code": "SERVER_ERROR", "message": message}}
         try:
             await websocket.send(json.dumps(error_response))
             await websocket.close(code, message)
