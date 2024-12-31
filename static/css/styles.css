@@ -1,0 +1,247 @@
+:root {
+  --chakra-colors-primary: #319795;
+  --chakra-colors-secondary: #4A5568;
+  --chakra-colors-gray-50: #F7FAFC;
+  --chakra-colors-gray-100: #EDF2F7;
+  --chakra-colors-gray-200: #E2E8F0;
+  --chakra-colors-gray-700: #2D3748;
+  --chakra-colors-gray-800: #1A202C;
+  --chakra-radius-md: 6px;
+  --chakra-shadows-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Base Styles */
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--chakra-colors-gray-50);
+  color: var(--chakra-colors-gray-800);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Layout */
+.chakra-app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.chakra-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  width: 100%;
+}
+
+/* Header */
+.chakra-header {
+  background-color: white;
+  box-shadow: var(--chakra-shadows-md);
+  padding: 1rem 0;
+}
+
+.chakra-header .chakra-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chakra-header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--chakra-colors-gray-800);
+  margin: 0;
+}
+
+/* Main Content */
+.chakra-main {
+  flex: 1;
+  padding: 2rem 0;
+}
+
+.chat-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr 300px;
+  gap: 2rem;
+  height: calc(100vh - 150px);
+}
+
+/* Settings Panel */
+.settings-panel {
+  background: white;
+  border-radius: var(--chakra-radius-md);
+  box-shadow: var(--chakra-shadows-md);
+  padding: 1.5rem;
+}
+
+.settings-content h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+/* Chat Container */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-radius: var(--chakra-radius-md);
+  box-shadow: var(--chakra-shadows-md);
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.message {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: var(--chakra-radius-md);
+  max-width: 80%;
+}
+
+.user-message {
+  background: var(--chakra-colors-primary);
+  color: white;
+  margin-left: auto;
+}
+
+.gemini-message {
+  background: var(--chakra-colors-gray-100);
+  margin-right: auto;
+}
+
+.chat-input {
+  padding: 1rem;
+  border-top: 1px solid var(--chakra-colors-gray-200);
+  display: flex;
+  gap: 1rem;
+}
+
+/* Buttons and Inputs */
+.chakra-button {
+  padding: 0.5rem 1rem;
+  border-radius: var(--chakra-radius-md);
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+}
+
+.chakra-button--primary {
+  background: var(--chakra-colors-primary);
+  color: white;
+}
+
+.chakra-button--primary:hover {
+  opacity: 0.9;
+}
+
+.chakra-button--secondary {
+  background: var(--chakra-colors-gray-100);
+  color: var(--chakra-colors-gray-700);
+}
+
+.chakra-button--icon {
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chakra-input {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--chakra-colors-gray-200);
+  border-radius: var(--chakra-radius-md);
+  font-size: 1rem;
+}
+
+.chakra-input:focus {
+  outline: none;
+  border-color: var(--chakra-colors-primary);
+  box-shadow: 0 0 0 1px var(--chakra-colors-primary);
+}
+
+/* Media Panel */
+.media-panel {
+  background: white;
+  border-radius: var(--chakra-radius-md);
+  box-shadow: var(--chakra-shadows-md);
+  padding: 1.5rem;
+}
+
+.video-preview {
+  position: relative;
+}
+
+.video-preview video {
+  width: 100%;
+  border-radius: var(--chakra-radius-md);
+}
+
+/* Loading Spinner */
+.chakra-spinner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 1.5rem;
+  border-radius: var(--chakra-radius-md);
+  display: none;
+  align-items: center;
+  gap: 1rem;
+}
+
+.spinner-inner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid transparent;
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .chat-layout {
+    grid-template-columns: 250px 1fr;
+  }
+  
+  .media-panel {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .chat-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .settings-panel {
+    display: none;
+  }
+  
+  .chakra-header h1 {
+    font-size: 1.25rem;
+  }
+}

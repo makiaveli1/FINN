@@ -1,0 +1,609 @@
+Multimodal Live API
+To try a tutorial that lets you use your voice and camera to talk to Gemini through the Multimodal Live API, see the websocket-demo-app tutorial.
+
+The Multimodal Live API enables low-latency, two-way interactions that use text, audio, and video input, with audio and text output. This facilitates natural, human-like voice conversations with the ability to interrupt the model at any time. The model's video understanding capability expands communication modalities, enabling you to share camera input or screencasts and ask questions about them.
+
+Capabilities
+Multimodal Live API includes the following key capabilities:
+
+Multimodality: The model can see, hear, and speak.
+Low-latency realtime interaction: The model can provide fast responses.
+Session memory: The model retains memory of all interactions within a single session, recalling previously heard or seen information.
+Support for function calling, code execution, and Search as a Tool: You can integrate the model with external services and data sources.
+Multimodal Live API is designed for server-to-server communication.
+
+For web and mobile apps, we recommend using integration from our partners at Daily.
+
+Get started
+Multimodal Live API is a stateful API that uses WebSockets.
+
+This section shows an example of how to use Multimodal Live API for text-to-text generation, using Python 3.9+.
+
+Install the Gemini API library
+To install the google-genai package, use the following pip command:
+
+
+!pip3 install google-genai
+Import dependencies
+To import dependencies:
+
+
+import asyncio
+import base64
+import contextlib
+import datetime
+import os
+import json
+import wave
+import itertools
+
+from IPython.display import display, Audio
+from google import genai
+Set the model name and the API key
+
+MODEL = "models/gemini-2.0-flash-exp"
+os.environ['GOOGLE_API_KEY'] = 'YOUR_API_KEY'
+Send and receive text messages
+
+client = genai.Client(
+  http_options={
+    'api_version': 'v1alpha',
+    'url': 'generativelanguage.googleapis.com',
+  }
+)
+
+config={
+  "generation_config": {"response_modalities": ["TEXT"]}
+}
+
+async with client.aio.live.connect(model=MODEL, config=config) as session:
+  message = "Hello? Gemini are you there?"
+  print("> ", message, "\n")
+  await session.send(message, end_of_turn=True)
+
+  # For text responses, When the model's turn is complete it breaks out of the loop.
+  async for response in session:
+    model_turn = response.server_content.model_turn
+    for part in model_turn.parts:
+      print("- ", part.text)
+Integration guide
+This section describes how integration works with Multimodal Live API.
+
+Sessions
+A session represents a single WebSocket connection between the client and the Gemini server.
+
+After a client initiates a new connection the session can exchange messages with the server to:
+
+Send text, audio, or video to the Gemini server.
+Receive audio, text, or function call responses from the Gemini server.
+The session configuration is sent in the first message after connection. A session configuration includes the model, generation parameters, system instructions, and tools.
+
+See the following example configuration:
+
+
+{​​
+  "model": string,
+  "generation_config": {​​
+    "candidate_count": integer,
+    "max_output_tokens": integer,
+    "temperature": number,
+    "top_p": number,
+    "top_k": integer,
+    "presence_penalty": number,
+    "frequency_penalty": number,
+    "response_modalities": string,
+    "speech_config":object
+  },
+
+  "system_instruction": "",
+  "tools":[]
+}
+For more information, see BidiGenerateContentSetup.
+
+Send messages
+Messages are JSON-formatted strings exchanged over the WebSocket connection.
+
+To send a message the client must send a supported client message in a JSON formatted string with one of over an open WebSocket connection.
+
+Supported client messages
+See the supported client messages in the following table:
+
+Message	Description
+BidiGenerateContentSetup	Session configuration to be sent in the first message
+BidiGenerateContentClientContent	Incremental content update of the current conversation delivered from the client
+BidiGenerateContentRealtimeInput	Real time audio or video input
+BidiGenerateContentToolResponse	Response to a ToolCallMessage received from the server
+Receive messages
+To receive messages from Gemini, listen for the WebSocket 'message' event, and then parse the result according to the definition of supported server messages.
+
+See the following:
+
+
+ws.addEventListener("message", async (evt) => {
+  if (evt.data instanceof Blob) {
+    // Process the received data (audio, video, etc.)
+  } else {
+    // Process JSON response
+  }
+});
+Supported server messages
+See the supported server messages in the following table:
+
+Message	Description
+BidiGenerateContentSetupComplete	A BidiGenerateContentSetup message from the client, sent when setup is complete
+BidiGenerateContentServerContent	Content generated by the model in response to a client message
+BidiGenerateContentToolCall	Request for the client to run the function calls and return the responses with the matching IDs
+BidiGenerateContentToolCallCancellation	Sent when a function call is canceled due to the user interrupting model output
+Incremental content updates
+Use incremental updates to send text input or establish/restore session context. For short contexts you can send turn-by-turn interactions to represent the exact sequence of events. For longer contexts it's recommended to provide a single message summary to free up the context window for the follow up interactions.
+
+See the following example context message:
+
+
+{
+  "client_content": {
+    "turns": [
+      {
+          "parts":[
+          {
+            "text": ""
+          }
+        ],
+        "role":"user"
+      },
+      {
+          "parts":[
+          {
+            "text": ""
+          }
+        ],
+        "role":"model"
+      }
+    ],
+    "turn_complete": true
+  }
+}
+Note that while content parts can be of a functionResponse type, BidiGenerateContentClientContent shouldn't be used to provide a response to the function calls issued by the model. BidiGenerateContentToolResponse should be used instead. BidiGenerateContentClientContent should only be used to establish previous context or provide text input to the conversation.
+
+Function calling
+All functions must be declared at the start of the session by sending tool definitions as part of the BidiGenerateContentSetup message.
+
+You define functions by using JSON, specifically with a select subset of the OpenAPI schema format. A single function declaration can include the following parameters:
+
+name (string): The unique identifier for the function within the API call.
+description (string): A comprehensive explanation of the function's purpose and capabilities.
+parameters (object): Defines the input data required by the function.
+type (string): Specifies the overall data type, such as object.
+properties (object): Lists individual parameters, each with:
+type (string): The data type of the parameter, such as string, integer, boolean.
+description (string): A clear explanation of the parameter's purpose and expected format.
+required (array): An array of strings listing the parameter names that are mandatory for the function to operate.
+For code examples of a function declaration using cURL commands, see Intro to function calling with the Gemini API. For examples of how to create function declarations using the Gemini API SDKs, see the Function calling tutorial.
+
+From a single prompt, the model can generate multiple function calls and the code necessary to chain their outputs. This code executes in a sandbox environment, generating subsequent BidiGenerateContentToolCall messages. The execution pauses until the results of each function call are available, which ensures sequential processing.
+
+The client should respond with BidiGenerateContentToolResponse.
+
+Audio formats
+Multimodal Live API supports the following audio formats:
+
+Input audio format: Raw 16 bit PCM audio at 16kHz little-endian
+Output audio format: Raw 16 bit PCM audio at 24kHz little-endian
+System instructions
+You can provide system instructions to better control the model's output and specify the tone and sentiment of audio responses.
+
+System instructions are added to the prompt before the interaction begins and remain in effect for the entire session.
+
+System instructions can only be set at the beginning of a session, immediately following the initial connection. To provide further input to the model during the session, use incremental content updates.
+
+Interruptions
+Users can interrupt the model's output at any time. When Voice activity detection (VAD) detects an interruption, the ongoing generation is canceled and discarded. Only the information already sent to the client is retained in the session history. The server then sends a BidiGenerateContentServerContent message to report the interruption.
+
+In addition, the Gemini server discards any pending function calls and sends a BidiGenerateContentServerContent message with the IDs of the canceled calls.
+
+Voices
+Multimodal Live API supports the following voices:
+
+Puck
+Charon
+Kore
+Fenrir
+Aoede
+To specify a voice, set the voice_name within the speech_config object, as part of your session configuration.
+
+See the following JSON representation of a speech_config object:
+
+
+{
+  "voice_config": {
+    "prebuilt_voice_config ": {
+      "voice_name": VOICE_NAME
+    }
+  }
+}
+Limitations
+Consider the following limitations of Multimodal Live API and Gemini 2.0 when you plan your project.
+
+Client authentication
+Multimodal Live API only provides server to server authentication and isn't recommended for direct client use. Client input should be routed through an intermediate application server for secure authentication with the Multimodal Live API.
+
+Conversation history
+While the model keeps track of in-session interactions, explicit session history accessible through the API isn't available yet. When a session is terminated the corresponding context is erased.
+
+In order to restore a previous session or provide the model with historic context of user interactions, the application should maintain its own conversation log and use a BidiGenerateContentClientContent message to send this information at the start of a new session.
+
+Maximum session duration
+Session duration is limited to up to 15 minutes for audio or up to 2 minutes of audio and video. When the session duration exceeds the limit, the connection is terminated.
+
+The model is also limited by the context size. Sending large chunks of content alongside the video and audio streams may result in earlier session termination.
+
+Voice activity detection (VAD)
+The model automatically performs voice activity detection (VAD) on a continuous audio input stream. VAD is always enabled, and its parameters aren't currently configurable.
+
+Additional limitations
+Manual endpointing isn't supported.
+
+Audio inputs and audio outputs negatively impact the model's ability to use function calling.
+
+Token count
+Token count isn't supported.
+
+Rate limits
+The following rate limits apply:
+
+3 concurrent sessions per API key
+4M tokens per minute
+Messages and events
+BidiGenerateContentClientContent
+Incremental update of the current conversation delivered from the client. All of the content here is unconditionally appended to the conversation history and used as part of the prompt to the model to generate content.
+
+A message here will interrupt any current model generation.
+
+Fields
+turns[]	
+Content
+
+Optional. The content appended to the current conversation with the model.
+
+For single-turn queries, this is a single instance. For multi-turn queries, this is a repeated field that contains conversation history and the latest request.
+
+turn_complete	
+bool
+
+Optional. If true, indicates that the server content generation should start with the currently accumulated prompt. Otherwise, the server awaits additional messages before starting generation.
+
+BidiGenerateContentRealtimeInput
+User input that is sent in real time.
+
+This is different from BidiGenerateContentClientContent in a few ways:
+
+Can be sent continuously without interruption to model generation.
+If there is a need to mix data interleaved across the BidiGenerateContentClientContent and the BidiGenerateContentRealtimeInput, the server attempts to optimize for best response, but there are no guarantees.
+End of turn is not explicitly specified, but is rather derived from user activity (for example, end of speech).
+Even before the end of turn, the data is processed incrementally to optimize for a fast start of the response from the model.
+Is always direct user input that is sent in real time. Can be sent continuously without interruptions. The model automatically detects the beginning and the end of user speech and starts or terminates streaming the response accordingly. Data is processed incrementally as it arrives, minimizing latency.
+Fields
+media_chunks[]	
+Blob
+
+Optional. Inlined bytes data for media input.
+
+BidiGenerateContentServerContent
+Incremental server update generated by the model in response to client messages.
+
+Content is generated as quickly as possible, and not in real time. Clients may choose to buffer and play it out in real time.
+
+Fields
+turn_complete	
+bool
+
+Output only. If true, indicates that the model is done generating. Generation will only start in response to additional client messages. Can be set alongside content, indicating that the content is the last in the turn.
+
+interrupted	
+bool
+
+Output only. If true, indicates that a client message has interrupted current model generation. If the client is playing out the content in real time, this is a good signal to stop and empty the current playback queue.
+
+model_turn	
+Content
+
+Output only. The content that the model has generated as part of the current conversation with the user.
+
+BidiGenerateContentSetup
+Message to be sent in the first and only first client message. Contains configuration that will apply for the duration of the session.
+
+Clients should wait for a BidiGenerateContentSetupComplete message before sending any additional messages.
+
+Fields
+model	
+string
+
+Required. The model's resource name. This serves as an ID for the Model to use.
+
+Format: models/{model}
+
+generation_config	
+GenerationConfig
+
+Optional. Generation config.
+
+The following fields are not supported:
+
+response_logprobs
+response_mime_type
+logprobs
+response_schema
+stop_sequence
+routing_config
+audio_timestamp
+system_instruction	
+Content
+
+Optional. The user provided system instructions for the model.
+
+Note: Only text should be used in parts and content in each part will be in a separate paragraph.
+
+tools[]	
+Tool
+
+Optional. A list of Tools the model may use to generate the next response.
+
+A Tool is a piece of code that enables the system to interact with external systems to perform an action, or set of actions, outside of knowledge and scope of the model.
+
+BidiGenerateContentSetupComplete
+This type has no fields.
+
+Sent in response to a BidiGenerateContentSetup message from the client.
+
+BidiGenerateContentToolCall
+Request for the client to execute the function_calls and return the responses with the matching ids.
+
+Fields
+function_calls[]	
+FunctionCall
+
+Output only. The function call to be executed.
+
+BidiGenerateContentToolCallCancellation
+Notification for the client that a previously issued ToolCallMessage with the specified ids should have been not executed and should be cancelled. If there were side-effects to those tool calls, clients may attempt to undo the tool calls. This message occurs only in cases where the clients interrupt server turns.
+
+Fields
+ids[]	
+string
+
+Output only. The ids of the tool calls to be cancelled.
+
+BidiGenerateContentToolResponse
+Client generated response to a ToolCall received from the server. Individual FunctionResponse objects are matched to the respective FunctionCall objects by the id field.
+
+Note that in the unary and server-streaming GenerateContent APIs function calling happens by exchanging the Content parts, while in the bidi GenerateContent APIs function calling happens over these dedicated set of messages.
+
+Fields
+function_responses[]	
+FunctionResponse
+
+Optional. The response to the function calls.
+
+
+
+
+
+
+# Gemini 2.0 Documentation
+
+## Overview
+
+### Gemini 2.0 Flash
+Gemini 2.0 Flash is now available as an experimental preview release through the Gemini Developer API and Google AI Studio. The model introduces new features and enhanced core capabilities:
+
+- **Multimodal Live API**: Enables real-time vision and audio streaming applications with tool use.
+- **Speed and Performance**: Significantly improved time to first token (TTFT) compared to 1.5 Flash.
+- **Quality**: Better performance across most benchmarks than Gemini 1.5 Pro.
+- **Improved Agentic Capabilities**: Enhanced multimodal understanding, coding, complex instruction following, and function calling.
+- **New Modalities**: Native image generation and controllable text-to-speech capabilities.
+
+**Note**: Image and audio generation are in private experimental release under allowlist. All other features are public experimental.
+
+---
+
+## Google Gen AI SDKs
+
+The new Google Gen AI SDK provides a unified interface to Gemini 2.0 through both the Gemini Developer API and the Gemini Enterprise API (Vertex AI). With a few exceptions, code that runs on one platform will run on both. The Gen AI SDK also supports the Gemini 1.5 models.
+
+### Python
+The Google Gen AI SDK for Python is available on PyPI and GitHub:
+
+- [google-genai on PyPI](https://pypi.org/project/google-genai/)
+- [python-genai on GitHub](https://github.com/google/python-genai)
+
+Or try out the **Getting Started notebook**.
+
+To learn more, see the [Python SDK reference](https://developers.google.com/ai/genai).
+
+### Quickstart
+#### 1. Import Libraries
+```python
+from google import genai
+from google.genai import types
+```
+
+#### 2. Create a Client
+```python
+client = genai.Client(api_key='YOUR_API_KEY')
+```
+
+#### 3. Generate Content
+```python
+response = client.models.generate_content(
+    model='gemini-1.5-pro-002', contents='What is your name?'
+)
+print(response.text)
+```
+
+---
+
+## Gemini API Reference
+
+The Gemini API lets you access the latest generative models from Google. This API reference provides detailed information for the classes and methods available in the Gemini API SDKs. Pick a language and follow the setup steps to get started with building generative applications on your platform of choice.
+
+Supported languages:
+- Python
+- Node.js
+- Go
+- Dart (Flutter)
+- Android
+- Swift
+- Web
+
+### Install the Gemini API Library
+Using Python 3.9+, install the `google-generativeai` package using the following pip command:
+
+```bash
+pip install -q -U google-generativeai
+```
+
+### Make Your First Request
+Use the `generateContent` method to send a request to the Gemini API.
+
+```python
+import google.generativeai as genai
+
+genai.configure(api_key="YOUR_API_KEY")
+model = genai.GenerativeModel("gemini-1.5-flash")
+response = model.generate_content("Explain how AI works")
+print(response.text)
+```
+
+---
+
+## Multimodal Live API
+
+### Integration Details
+#### Sessions
+A session represents a WebSocket connection between the client and the Gemini server. Sessions allow:
+
+- Sending text, audio, or video to Gemini.
+- Receiving audio, text, or function call responses.
+
+Sessions are configured via a `BidiGenerateContentSetup` message at the start of a connection.
+
+#### Incremental Updates
+Incremental updates enable:
+
+- Real-time interaction with user input streamed continuously.
+- Dynamic adjustment of prompts and context.
+
+#### Function Calling
+Functions can be declared at the start of the session using JSON. Each function includes:
+
+- **Name**: A unique identifier.
+- **Description**: Explains the purpose.
+- **Parameters**: Defines input requirements.
+
+#### Audio Formats
+- **Input**: 16-bit PCM audio at 16kHz.
+- **Output**: 16-bit PCM audio at 24kHz.
+
+### Limitations
+- Sessions are limited to 15 minutes for audio or 2 minutes for combined audio and video.
+- Audio inputs and outputs may reduce function calling accuracy.
+- Token counts and explicit conversation history management are not supported.
+
+For more detailed information, see the [Multimodal Live API Documentation](https://developers.google.com/ai/gemini/multimodal-live-api).
+
+---
+
+## Search as a Tool
+
+Gemini 2.0 integrates **Google Search** as a tool to enhance factuality and recency.
+
+### Configuration Example
+```python
+from google import genai
+from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
+
+client = genai.Client()
+model_id = "gemini-2.0-flash-exp"
+
+google_search_tool = Tool(google_search=GoogleSearch())
+
+response = client.models.generate_content(
+    model=model_id,
+    contents="When is the next total solar eclipse in the United States?",
+    config=GenerateContentConfig(
+        tools=[google_search_tool],
+        response_modalities=["TEXT"],
+    )
+)
+
+print(response.candidates[0].content.parts[0].text)
+```
+
+---
+
+## Advanced Capabilities
+
+### Compositional Function Calling
+Supports multiple user-defined function calls during response generation.
+
+#### Example
+```python
+turn_on_the_lights_schema = {'name': 'turn_on_the_lights'}
+turn_off_the_lights_schema = {'name': 'turn_off_the_lights'}
+
+prompt = """
+  Hey, can you write and run some Python code to turn on the lights, wait 10s, and then turn off the lights?
+"""
+
+tools = [
+    {'code_execution': {}},
+    {'function_declarations': [turn_on_the_lights_schema, turn_off_the_lights_schema]}
+]
+
+await run(prompt, tools=tools, modality="AUDIO")
+```
+
+### Multi-Tool Use
+Enable multiple tools simultaneously, such as **Google Search** and **code execution**.
+
+---
+
+## Bounding Box Detection
+Provides object detection and localization within images and video.
+
+### Features
+- **Simple Integration**: No prior computer vision expertise required.
+- **Customizable**: Tailor bounding boxes to custom instructions.
+
+### Technical Details
+- **Input**: Prompt and associated images or video frames.
+- **Output**: Bounding boxes in `[y_min, x_min, y_max, x_max]` format with normalized coordinates.
+
+---
+
+## Multimodal Real-Time Audio and Video Interaction
+
+### Sample Implementation
+Below is an advanced example demonstrating how to integrate Gemini 2.0's multimodal capabilities with real-time audio and video streaming. This implementation uses `pyaudio` for audio input and output, `cv2` for video capture, and `asyncio` for handling asynchronous tasks. The example captures audio and video, sends it to Gemini for processing, and streams responses back to the user.
+
+### Code Explanation
+This script:
+
+1. **Audio Input/Output**:
+   - Captures microphone audio and streams it to Gemini using `pyaudio`.
+   - Streams audio responses from Gemini to the speakers.
+
+2. **Video Input**:
+   - Captures frames from the default camera using OpenCV (`cv2`).
+   - Compresses and encodes video frames as JPEG before sending them to Gemini.
+
+3. **Text Input**:
+   - Allows users to send text messages interactively.
+
+4. **Real-Time Processing**:
+   - Uses `asyncio` to manage concurrent tasks for capturing, sending, and receiving audio/video/text.
+
+### Code Implementation
+```python
+# Advanced implementation code goes here.
+```
