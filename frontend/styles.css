@@ -1,0 +1,195 @@
+:root {
+  --container-bg: rgb(224, 224, 224);
+  --md-sys-color-on-surface: #000;
+}
+
+body {
+  font-family: "Roboto";
+  text-align: center;
+  margin: 20px;
+}
+h1 {
+  margin-bottom: 0;
+}
+
+/* Main app container */
+
+#app-container {
+  display: grid;
+  grid-template-columns: auto 1fr; /* Sidebar and main content */
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Sidebar for settings */
+
+#settings-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  border-radius: 8px;
+  background-color: var(--container-bg);
+  width: 300px; /* Fixed width for the sidebar */
+  height: fit-content;
+}
+
+/* Model config section */
+
+#model-config-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Media controls */
+
+#media-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.input-select {
+  margin-bottom: 10px;
+}
+
+/* Main chat container */
+
+#chat-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  border-radius: 8px;
+  background-color: var(--container-bg);
+  height: fit-content;
+}
+
+/* Video preview */
+
+#video-preview {
+  height: 200px;
+  width: 100%;
+  border-radius: 8px;
+  background-color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Text input */
+
+#text-input {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* State indicators */
+
+.icon-text {
+  vertical-align: super;
+}
+
+.state-container {
+  display: flex;
+  justify-content: space-around;
+  gap: 10px;
+}
+
+.state {
+  border-radius: 50px;
+  padding: 10px;
+  text-align: center;
+  background-color: rgb(203, 203, 203);
+}
+
+#disconnected {
+  background-color: #ffebee; /* Light red background */
+  color: #b71c1c; /* Dark red text */
+}
+
+#disconnected .material-symbols-outlined {
+  color: #b71c1c;
+}
+
+#connecting {
+  background-color: #fffde7; /* Light yellow background */
+  color: #f57f17; /* Dark yellow text */
+  animation: throb 1s infinite ease-in-out;
+}
+
+#connecting .material-symbols-outlined {
+  color: #f57f17;
+}
+
+#connected {
+  background-color: #e8f5e9; /* Light green background */
+  color: #2e7d32; /* Dark green text */
+}
+
+#connected .material-symbols-outlined {
+  color: #2e7d32;
+}
+
+#speaking {
+  background-color: #e3f2fd; /* Light blue background */
+  color: #1565c0; /* Dark blue text */
+  animation: throb 1s infinite ease-in-out;
+}
+
+#speaking .material-symbols-outlined {
+  color: #1565c0;
+}
+
+@keyframes throb {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+.spread {
+  display: flex;
+  justify-content: space-around;
+}
+
+/* Responsive layout */
+
+@media (min-width: 768px) {
+  #app-container {
+    grid-template-columns: 300px 1fr; /* Fixed sidebar and flexible main */
+  }
+
+  #media-controls {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  #text-input {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  body {
+    text-align: left;
+  }
+}
+
+#canvas {
+  display: none;
+}

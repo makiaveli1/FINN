@@ -1,0 +1,18 @@
+git init
+git add .
+git commit -m "Initial commit: UI/UX Improvements
+
+- Reorganized layout with video preview and controls on left
+- Added chat interface on right
+- Improved visual hierarchy and spacing
+- Added proper status indicators
+- Implemented Material Design components
+- Added responsive layout
+- Improved control panel organization
+- Enhanced video preview section
+- Added proper scrolling for chat
+- Improved input field placement"
+
+git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/gemini-finn.git
+git push -u origin main 

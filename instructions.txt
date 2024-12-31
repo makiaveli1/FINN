@@ -1,0 +1,236 @@
+### Instructions for Understanding and Using the Multimodal Live API with Examples
+
+---
+
+#### **Overview of Multimodal Live API**
+
+The Multimodal Live API is designed for low-latency, two-way interactions combining text, audio, and video inputs with audio and text outputs. It supports natural, human-like conversations and integrates with external tools via function calling and code execution. This guide summarizes the API's functionality, setup, and best practices.
+
+---
+
+### **Instructions for API Usage**
+
+---
+
+#### **1. Install and Set Up the API**
+
+- **Install the Gemini API Library**:
+  ```bash
+  pip3 install google-genai
+  ```
+
+- **Set Environment Variables**:
+  Replace placeholders with your project information:
+  ```bash
+  export GOOGLE_CLOUD_PROJECT=YOUR_CLOUD_PROJECT
+  export GOOGLE_CLOUD_LOCATION=us-central1
+  export GOOGLE_GENAI_USE_VERTEXAI=True
+  ```
+
+- **Import Dependencies**:
+  ```python
+  from google import genai
+  ```
+
+---
+
+#### **2. Connect and Initialize a Session**
+
+- **Create a Client and Connect**:
+  ```python
+  client = genai.Client()
+  model_id = "gemini-2.0-flash-exp"
+  config = {"response_modalities": ["TEXT"]}
+
+  async with client.aio.live.connect(model=model_id, config=config) as session:
+      message = "Hello? Gemini, are you there?"
+      print("> ", message, "\n")
+      await session.send(message, end_of_turn=True)
+
+      async for response in session.receive():
+          print(response.text)
+  ```
+
+- **Session Structure**:
+  A session is a WebSocket connection where you send and receive text, audio, or video. Set up session parameters using the `BidiGenerateContentSetup` message.
+
+---
+
+#### **3. Configure the Model**
+
+- **Session Configuration JSON**:
+  Include model details, generation parameters, and tools in the configuration:
+  ```json
+  {
+    "model": "projects/{project}/locations/{location}/publishers/*/models/*",
+    "generation_config": {
+      "candidate_count": 1,
+      "max_output_tokens": 100,
+      "temperature": 0.7,
+      "top_p": 0.9
+    },
+    "system_instruction": "Respond in a concise and helpful manner.",
+    "tools": []
+  }
+  ```
+
+- **Example Parameters**:
+  - `temperature`: Controls response creativity (e.g., 0.7 for balanced responses).
+  - `max_output_tokens`: Limits response length.
+
+---
+
+#### **4. Sending Messages**
+
+- **Client-Side Message Formats**:
+  Use `BidiGenerateContentClientContent` for sending text and `BidiGenerateContentRealtimeInput` for audio/video:
+  ```json
+  {
+    "client_content": {
+      "turns": [
+        {"parts": [{"text": "Hello, Gemini!"}], "role": "user"}
+      ],
+      "turn_complete": true
+    }
+  }
+  ```
+
+- **Example Turn Interaction**:
+  1. Send:
+     ```json
+     {
+       "turns": [{"parts": [{"text": "Tell me about the weather."}], "role": "user"}],
+       "turn_complete": true
+     }
+     ```
+  2. Receive:
+     ```json
+     {
+       "model_turn": {"text": "It's sunny with a light breeze."}
+     }
+     ```
+
+---
+
+#### **5. Function Calling**
+
+- **Define Functions in JSON**:
+  ```json
+  {
+    "name": "get_weather",
+    "description": "Fetches current weather data.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "location": {"type": "string", "description": "City name"},
+        "units": {"type": "string", "description": "Metric or imperial"}
+      },
+      "required": ["location"]
+    }
+  }
+  ```
+
+- **Server Request Example**:
+  ```json
+  {
+    "function_calls": [
+      {"id": "123", "name": "get_weather", "parameters": {"location": "Dublin", "units": "metric"}}
+    ]
+  }
+  ```
+
+- **Client Response Example**:
+  ```json
+  {
+    "function_responses": [
+      {"id": "123", "result": {"temperature": 15, "description": "Partly cloudy"}}
+    ]
+  }
+  ```
+
+---
+
+#### **6. Streaming Audio/Video**
+
+- **Audio Input Example**:
+  ```json
+  {
+    "media_chunks": [
+      {"blob": "binary_data_chunk_1"},
+      {"blob": "binary_data_chunk_2"}
+    ]
+  }
+  ```
+
+- **Audio Output Example**:
+  The server responds with audio data in `PCM 16-bit 24kHz`.
+
+---
+
+#### **7. Interruptions and Voice Activity Detection (VAD)**
+
+- **Interrupt Handling**:
+  If interrupted, the model sends:
+  ```json
+  {
+    "interrupted": true,
+    "turn_complete": true
+  }
+  ```
+
+- **VAD Note**:
+  Automatic and non-configurable. Detects user interruptions in real-time.
+
+---
+
+#### **8. Limitations and Best Practices**
+
+- **Session Limits**:
+  - Up to 15 minutes for audio-only.
+  - Up to 2 minutes for combined audio and video.
+
+- **Session Persistence**:
+  Maintain your own conversation logs to restore context in a new session.
+
+- **Rate Limits**:
+  - 3 concurrent sessions per API key.
+  - 4M tokens per minute.
+
+---
+
+#### **Examples of Advanced Use Cases**
+
+- **Incremental Updates**:
+  Combine partial inputs for large contexts:
+  ```json
+  {
+    "client_content": {
+      "turns": [
+        {"parts": [{"text": "Provide a summary of the document."}], "role": "user"}
+      ],
+      "turn_complete": false
+    }
+  }
+  ```
+
+- **System Instructions**:
+  Set behavior for the session:
+  ```json
+  {
+    "system_instruction": "Act as an AI assistant and provide helpful responses."
+  }
+  ```
+
+- **Prebuilt Voice Configuration**:
+  Specify a voice:
+  ```json
+  {
+    "voice_config": {
+      "prebuilt_voice_config": {"voice_name": "Aoede"}
+    }
+  }
+  ```
+
+---
+
+This structured approach ensures an effective and efficient integration of the Multimodal Live API, leveraging its multimodal and low-latency capabilities for diverse applications.

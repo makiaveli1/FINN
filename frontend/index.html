@@ -1,0 +1,127 @@
+<head>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+    />
+    <script type="importmap">
+      {
+        "imports": {
+          "@material/web/": "https://esm.run/@material/web/"
+        }
+      }
+    </script>
+    <script type="module">
+      import "@material/web/all.js";
+      import { styles as typescaleStyles } from "@material/web/typography/md-typescale-styles.js";
+  
+      document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
+    </script>
+  
+    <script src="gemini-live-api.js"></script>
+    <script src="live-media-manager.js"></script>
+    <script src="cookieJar.js"></script>
+  
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="script.js"></script>
+  </head>
+  <body>
+    <div id="app-container">
+      <!-- Left Section: Video & Controls -->
+      <main id="main-section">
+        <!-- Video Preview -->
+        <div id="video-preview">
+          <video id="video" autoplay playsinline muted></video>
+          <canvas id="canvas"></canvas>
+        </div>
+
+        <!-- Controls Container -->
+        <div id="controls-container">
+          <!-- Video Source Controls -->
+          <div class="control-panel">
+            <div class="toggle-buttons">
+              <md-filled-tonal-button onclick="cameraBtnClick()">
+                <md-icon slot="icon">videocam</md-icon>
+                Camera
+              </md-filled-tonal-button>
+              <md-filled-tonal-button onclick="screenShareBtnClick()">
+                <md-icon slot="icon">present_to_all</md-icon>
+                Screen
+              </md-filled-tonal-button>
+            </div>
+            <md-outlined-select
+              id="cameraSource"
+              label="Camera Device"
+              onchange="newCameraSelected()"
+            ></md-outlined-select>
+          </div>
+
+          <!-- Audio Controls -->
+          <div class="control-panel">
+            <md-outlined-select
+              id="audioSource"
+              label="Microphone Device"
+              onchange="newMicSelected()"
+            ></md-outlined-select>
+            <span id="micBtn">
+              <md-filled-tonal-button onclick="micBtnClick()">
+                <md-icon slot="icon">mic</md-icon>
+                Start Recording
+              </md-filled-tonal-button>
+            </span>
+          </div>
+
+          <!-- Connection Settings -->
+          <div class="control-panel">
+            <div class="settings-group">
+              <md-outlined-text-field
+                id="token"
+                label="Access Token"
+              ></md-outlined-text-field>
+              <md-outlined-text-field
+                id="project"
+                label="Project ID"
+              ></md-outlined-text-field>
+              <md-outlined-text-field
+                id="systemInstructions"
+                label="System Instructions"
+              ></md-outlined-text-field>
+            </div>
+            <div class="action-buttons">
+              <md-filled-button onclick="connectBtnClick()">Connect</md-filled-button>
+              <md-filled-button onclick="disconnectBtnClick()">Disconnect</md-filled-button>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Right Chat Section -->
+      <aside id="chat-section">
+        <header class="chat-header">
+          <h1>Multimodal Live API</h1>
+          <div class="connection-status">
+            <div id="disconnected" class="status-badge">
+              <span class="material-symbols-outlined">cloud_off</span>
+              <span>disconnected</span>
+            </div>
+          </div>
+        </header>
+        
+        <div id="chat-container">
+          <div id="messages"></div>
+          <div class="input-container">
+            <md-outlined-text-field
+              id="text-message"
+              label="Message Gemini..."
+            ></md-outlined-text-field>
+            <md-icon-button onclick="newUserMessage()">
+              <md-icon>send</md-icon>
+            </md-icon-button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </body>

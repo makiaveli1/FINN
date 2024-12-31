@@ -1,0 +1,41 @@
+<invoke name="run_terminal_cmd">
+<parameter name="command">git init</parameter>
+<parameter name="explanation">Initializing a new git repository</parameter>
+<parameter name="is_background">false</parameter>
+<parameter name="require_user_approval">true</parameter>
+</invoke>
+
+<invoke name="run_terminal_cmd">
+<parameter name="command">git add .</parameter>
+<parameter name="explanation">Adding all files to git staging area</parameter>
+<parameter name="is_background">false</parameter>
+<parameter name="require_user_approval">true</parameter>
+</invoke>
+
+<invoke name="run_terminal_cmd">
+<parameter name="command">git commit -m "Initial commit: UI/UX Improvements - Reorganized layout with video preview and controls on left, added chat interface on right, improved visual hierarchy and spacing"</parameter>
+<parameter name="explanation">Creating initial commit with our changes</parameter>
+<parameter name="is_background">false</parameter>
+<parameter name="require_user_approval">true</parameter>
+</invoke>
+
+<invoke name="run_terminal_cmd">
+<parameter name="command">git branch -M main</parameter>
+<parameter name="explanation">Renaming the default branch to main</parameter>
+<parameter name="is_background">false</parameter>
+<parameter name="require_user_approval">true</parameter>
+</invoke>
+
+<invoke name="run_terminal_cmd">
+<parameter name="command">git remote add origin https://github.com/makiaveli1/FINN.git</parameter>
+<parameter name="explanation">Adding the remote repository</parameter>
+<parameter name="is_background">false</parameter>
+<parameter name="require_user_approval">true</parameter>
+</invoke>
+
+<invoke name="run_terminal_cmd">
+<parameter name="command">git push -u origin main</parameter>
+<parameter name="explanation">Pushing our changes to the remote repository</parameter>
+<parameter name="is_background">false</parameter>
+<parameter name="require_user_approval">true</parameter>
+</invoke> 
